@@ -6,6 +6,7 @@ import requests
 import telegram
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 PRAKTIKUM_TOKEN = os.getenv('PRAKTIKUM_TOKEN')
@@ -45,24 +46,26 @@ def get_homework_statuses(current_timestamp):
 
     except requests.exceptions.RequestException as e:
         logging.error(e, exc_info=True)
-        raise SystemExit(e)
+        return {}
 
 
 def send_message(message, bot_client):
     return bot_client.send_message(CHAT_ID, text=message)
 
 
+def catch_index_error(hw_dict, index):
+    try:
+        return hw_dict.get('homeworks')[index]
+    except IndexError:
+        logging.info(IndexError, exc_info=True)
+        return {}
+
+
 def main():
     bot_client = telegram.Bot(token=TELEGRAM_TOKEN)
     logging.debug('Бот запущен.')
     current_timestamp = int(time.time())
-    new_homework = []
-
-    def catch_index_error(index):
-        try:
-            return new_homework.get('homeworks')[index]
-        except IndexError:
-            return None
+    new_homework = {}
 
     while True:
         try:
@@ -70,7 +73,7 @@ def main():
             if new_homework.get('homeworks'):
                 send_message(
                     parse_homework_status(
-                        catch_index_error(0)),
+                        catch_index_error(new_homework, 0)),
                     bot_client
                 )
             current_timestamp = new_homework.get(
